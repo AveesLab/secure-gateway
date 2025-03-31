@@ -1,0 +1,17 @@
+import "platform:/plugin/org.genivi.commonapi.someip/deployment/CommonAPI-4-SOMEIP_deployment_spec.fdepl"
+import "Key_exchange.fidl"
+
+define org.genivi.commonapi.someip.deployment for interface commonapi.SecurityGateway {
+        SomeIpServiceID = 4660
+
+        method requestSessionKey {
+                SomeIpMethodID = 123
+        }
+}
+
+define org.genivi.commonapi.someip.deployment for provider as SecurityGatewayService {
+        instance commonapi.SecurityGateway {
+                InstanceId = "gateway_service"
+                SomeIpInstanceID = 22136
+        }
+}
