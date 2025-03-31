@@ -1,0 +1,44 @@
+package commonapi
+
+typeCollection KeyExchangeTypes {
+	struct Array {
+	    UInt64 part1
+	    UInt64 part2
+	    UInt64 part3
+	    UInt64 part4
+	    UInt64 part5
+	    UInt64 part6
+	    UInt64 part7
+	    UInt64 part8
+	}
+	
+	struct AuthenticationRequest {
+		UInt32 nodeID
+		UInt64 nonce
+		UInt64 timestamp
+		Array publicKey
+		Array signature
+	}
+	
+	struct AuthenticationResponse {
+		Boolean success
+		Array gatewayPublickey
+		Array signature
+	}
+}
+
+interface SecurityGateway {
+
+  version {major 1 minor 0}
+
+  method requestSessionKey {
+    in {
+	KeyExchangeTypes.AuthenticationRequest authRequest
+    }
+    out {
+	KeyExchangeTypes.AuthenticationResponse authResponse
+    }
+  }
+}
+
+
