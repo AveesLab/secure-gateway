@@ -6,6 +6,10 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <cstring>
+#include <chrono>
+#include <random>
+#include <ctime>
 #include <CommonAPI/CommonAPI.hpp>
 #include <v1/automotive/SecurityGatewayProxy.hpp>
 
@@ -31,6 +35,10 @@ public:
         bool &_success,                        // out
         std::vector<uint8_t> &_gatewayPublicKey // out
     );
+
+//    uint64_t generateNonce();
+//    uint64_t getTimestamp();
+//    std::vector<uint8_t> serializeMessage(uint32_t node_id, uint64_t nonce, uint64_t timestamp);
 
 //    void authNode();
 };

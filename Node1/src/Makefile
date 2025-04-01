@@ -40,7 +40,7 @@ DISTNAME      = Node11.0.0
 DISTDIR = /home/avees/secure-gateway/Node1/src/.tmp/Node11.0.0
 LINK          = g++
 LFLAGS        = -Wl,-O1
-LIBS          = $(SUBLIBS) -L/usr/local/lib/ -lCommonAPI -lCommonAPI-SomeIP -lvsomeip3 /usr/lib/aarch64-linux-gnu/libQt5Gui.so /usr/lib/aarch64-linux-gnu/libQt5Core.so /usr/lib/aarch64-linux-gnu/libGL.so -lpthread   
+LIBS          = $(SUBLIBS) -L/usr/local/lib/ -lCommonAPI -lCommonAPI-SomeIP -lvsomeip3 -lteec /usr/lib/aarch64-linux-gnu/libQt5Gui.so /usr/lib/aarch64-linux-gnu/libQt5Core.so /usr/lib/aarch64-linux-gnu/libGL.so -lpthread   
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -158,7 +158,8 @@ DIST          = /usr/lib/aarch64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPStubAdapter.hpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewayStub.hpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewayStubDefault.hpp \
-		Node1.hpp Node1.cpp \
+		Node1.hpp \
+		signature_ta.h Node1.cpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.cpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPProxy.cpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPStubAdapter.cpp
@@ -371,7 +372,7 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/aarch64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents ../../src-gen-gateway/v1/automotive/SecurityGateway.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayProxy.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayProxyBase.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPProxy.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPStubAdapter.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayStub.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayStubDefault.hpp Node1.hpp $(DISTDIR)/
+	$(COPY_FILE) --parents ../../src-gen-gateway/v1/automotive/SecurityGateway.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayProxy.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayProxyBase.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPProxy.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPStubAdapter.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayStub.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayStubDefault.hpp Node1.hpp signature_ta.h $(DISTDIR)/
 	$(COPY_FILE) --parents Node1.cpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.cpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPProxy.cpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPStubAdapter.cpp $(DISTDIR)/
 
 
@@ -423,7 +424,8 @@ compiler_clean: compiler_moc_predefs_clean
 Node1.o: Node1.cpp Node1.hpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewayProxy.hpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewayProxyBase.hpp \
-		../../src-gen-gateway/v1/automotive/SecurityGateway.hpp
+		../../src-gen-gateway/v1/automotive/SecurityGateway.hpp \
+		signature_ta.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Node1.o Node1.cpp
 
 SecurityGatewaySomeIPDeployment.o: ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.cpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.hpp
