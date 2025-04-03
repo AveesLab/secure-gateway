@@ -33,8 +33,6 @@ else:unix: LIBS += -L/usr/local/lib/ -lvsomeip3
 INCLUDEPATH += /usr/local/include
 DEPENDPATH += /usr/local/include
 
-LIBS += -lteec
-
 HEADERS += \
     ../../src-gen-gateway/v1/automotive/SecurityGateway.hpp \
     ../../src-gen-gateway/v1/automotive/SecurityGatewayProxy.hpp \
@@ -45,4 +43,3 @@ HEADERS += \
     ../../src-gen-gateway/v1/automotive/SecurityGatewayStub.hpp \
     ../../src-gen-gateway/v1/automotive/SecurityGatewayStubDefault.hpp \
     SecurityGatewayStubImpl.hpp \
-    gateway_ta.h \
