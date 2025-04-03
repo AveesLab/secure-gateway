@@ -40,7 +40,7 @@ DISTNAME      = gateway1.0.0
 DISTDIR = /home/avees/secure-gateway/Gateway/src/.tmp/gateway1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-O1
-LIBS          = $(SUBLIBS) -L/usr/local/lib/ -lCommonAPI -lCommonAPI-SomeIP -lvsomeip3 /usr/lib/aarch64-linux-gnu/libQt5Gui.so /usr/lib/aarch64-linux-gnu/libQt5Core.so /usr/lib/aarch64-linux-gnu/libGL.so -lpthread   
+LIBS          = $(SUBLIBS) -L/usr/local/lib/ -lCommonAPI -lCommonAPI-SomeIP -lvsomeip3 -lteec /usr/lib/aarch64-linux-gnu/libQt5Gui.so /usr/lib/aarch64-linux-gnu/libQt5Core.so /usr/lib/aarch64-linux-gnu/libGL.so -lpthread   
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -77,9 +77,6 @@ DIST          = /usr/lib/aarch64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_core_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_dbus.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_dbus_private.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_designer.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_designer_private.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_designercomponents_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_devicediscovery_support_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_edid_support_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_egl_support_private.pri \
@@ -91,8 +88,6 @@ DIST          = /usr/lib/aarch64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_glx_support_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_gui.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_gui_private.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_help.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_help_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_input_support_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_kms_support_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_linuxaccessibility_support_private.pri \
@@ -117,12 +112,7 @@ DIST          = /usr/lib/aarch64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_testlib.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_testlib_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_theme_support_private.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_uiplugin.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_uitools.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_uitools_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_vulkan_support_private.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_webkit.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_webkitwidgets.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_widgets.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_widgets_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_xcb_qpa_lib_private.pri \
@@ -158,7 +148,8 @@ DIST          = /usr/lib/aarch64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPStubAdapter.hpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewayStub.hpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewayStubDefault.hpp \
-		SecurityGatewayStubImpl.hpp SecurityGatewayStubImpl.cpp \
+		SecurityGatewayStubImpl.hpp \
+		gateway_ta.h SecurityGatewayStubImpl.cpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.cpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPProxy.cpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPStubAdapter.cpp
@@ -190,9 +181,6 @@ Makefile: gateway.pro /usr/lib/aarch64-linux-gnu/qt5/mkspecs/linux-g++/qmake.con
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_core_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_dbus.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_dbus_private.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_designer.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_designer_private.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_designercomponents_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_devicediscovery_support_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_edid_support_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_egl_support_private.pri \
@@ -204,8 +192,6 @@ Makefile: gateway.pro /usr/lib/aarch64-linux-gnu/qt5/mkspecs/linux-g++/qmake.con
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_glx_support_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_gui.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_gui_private.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_help.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_help_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_input_support_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_kms_support_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_linuxaccessibility_support_private.pri \
@@ -230,12 +216,7 @@ Makefile: gateway.pro /usr/lib/aarch64-linux-gnu/qt5/mkspecs/linux-g++/qmake.con
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_testlib.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_testlib_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_theme_support_private.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_uiplugin.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_uitools.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_uitools_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_vulkan_support_private.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_webkit.pri \
-		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_webkitwidgets.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_widgets.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_widgets_private.pri \
 		/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_xcb_qpa_lib_private.pri \
@@ -282,9 +263,6 @@ Makefile: gateway.pro /usr/lib/aarch64-linux-gnu/qt5/mkspecs/linux-g++/qmake.con
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_core_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_dbus.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_dbus_private.pri:
-/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_designer.pri:
-/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_designer_private.pri:
-/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_designercomponents_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_devicediscovery_support_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_edid_support_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_egl_support_private.pri:
@@ -296,8 +274,6 @@ Makefile: gateway.pro /usr/lib/aarch64-linux-gnu/qt5/mkspecs/linux-g++/qmake.con
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_glx_support_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_gui.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_gui_private.pri:
-/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_help.pri:
-/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_help_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_input_support_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_kms_support_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_linuxaccessibility_support_private.pri:
@@ -322,12 +298,7 @@ Makefile: gateway.pro /usr/lib/aarch64-linux-gnu/qt5/mkspecs/linux-g++/qmake.con
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_testlib.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_testlib_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_theme_support_private.pri:
-/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_uiplugin.pri:
-/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_uitools.pri:
-/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_uitools_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_vulkan_support_private.pri:
-/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_webkit.pri:
-/usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_webkitwidgets.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_widgets.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_widgets_private.pri:
 /usr/lib/aarch64-linux-gnu/qt5/mkspecs/modules/qt_lib_xcb_qpa_lib_private.pri:
@@ -371,7 +342,7 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/aarch64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents ../../src-gen-gateway/v1/automotive/SecurityGateway.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayProxy.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayProxyBase.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPProxy.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPStubAdapter.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayStub.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayStubDefault.hpp SecurityGatewayStubImpl.hpp $(DISTDIR)/
+	$(COPY_FILE) --parents ../../src-gen-gateway/v1/automotive/SecurityGateway.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayProxy.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayProxyBase.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPProxy.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPStubAdapter.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayStub.hpp ../../src-gen-gateway/v1/automotive/SecurityGatewayStubDefault.hpp SecurityGatewayStubImpl.hpp gateway_ta.h $(DISTDIR)/
 	$(COPY_FILE) --parents SecurityGatewayStubImpl.cpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.cpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPProxy.cpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPStubAdapter.cpp $(DISTDIR)/
 
 
@@ -423,7 +394,8 @@ compiler_clean: compiler_moc_predefs_clean
 SecurityGatewayStubImpl.o: SecurityGatewayStubImpl.cpp SecurityGatewayStubImpl.hpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewayStubDefault.hpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewayStub.hpp \
-		../../src-gen-gateway/v1/automotive/SecurityGateway.hpp
+		../../src-gen-gateway/v1/automotive/SecurityGateway.hpp \
+		gateway_ta.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o SecurityGatewayStubImpl.o SecurityGatewayStubImpl.cpp
 
 SecurityGatewaySomeIPDeployment.o: ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.cpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.hpp

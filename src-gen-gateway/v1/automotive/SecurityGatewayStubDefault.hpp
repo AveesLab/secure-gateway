@@ -60,13 +60,14 @@ public:
         return &remoteEventHandler_;
     }
 
-    COMMONAPI_EXPORT virtual void requestSessionKey(const std::shared_ptr<CommonAPI::ClientId> _client, uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, requestSessionKeyReply_t _reply) {
+    COMMONAPI_EXPORT virtual void requestSessionKey(const std::shared_ptr<CommonAPI::ClientId> _client, uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, requestSessionKeyReply_t _reply) {
         (void)_client;
         (void)_nodeID;
         (void)_nonce;
         (void)_timestamp;
         (void)_publicKey;
         (void)_signature;
+        (void)_ecdhPublicKey;
         bool success = false;
         std::vector< uint8_t > gatewayPublicKey = {};
         _reply(success, gatewayPublicKey);
