@@ -77,7 +77,7 @@ public:
      * "SUCCESS" or which type of error has occurred. In case of an error, ONLY the CallStatus
      * will be set.
      */
-    virtual void requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, const CommonAPI::CallInfo *_info = nullptr);
+    virtual void requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, const CommonAPI::CallInfo *_info = nullptr);
     /**
      * Calls requestSessionKey with asynchronous semantics.
      *
@@ -88,7 +88,7 @@ public:
      * The std::future returned by this method will be fulfilled at arrival of the reply.
      * It will provide the same value for CallStatus as will be handed to the callback.
      */
-    virtual std::future<CommonAPI::CallStatus> requestSessionKeyAsync(const uint32_t &_nodeID, const uint64_t &_nonce, const uint64_t &_timestamp, const std::vector< uint8_t > &_publicKey, const std::vector< uint8_t > &_signature, RequestSessionKeyAsyncCallback _callback = nullptr, const CommonAPI::CallInfo *_info = nullptr);
+    virtual std::future<CommonAPI::CallStatus> requestSessionKeyAsync(const uint32_t &_nodeID, const uint64_t &_nonce, const uint64_t &_timestamp, const std::vector< uint8_t > &_publicKey, const std::vector< uint8_t > &_signature, const std::vector< uint8_t > &_ecdhPublicKey, RequestSessionKeyAsyncCallback _callback = nullptr, const CommonAPI::CallInfo *_info = nullptr);
 
 
 
@@ -113,13 +113,13 @@ SecurityGatewayProxy<_AttributeExtensions...>::~SecurityGatewayProxy() {
 }
 
 template <typename ... _AttributeExtensions>
-void SecurityGatewayProxy<_AttributeExtensions...>::requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, const CommonAPI::CallInfo *_info) {
-    delegate_->requestSessionKey(_nodeID, _nonce, _timestamp, _publicKey, _signature, _internalCallStatus, _success, _gatewayPublicKey, _info);
+void SecurityGatewayProxy<_AttributeExtensions...>::requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, const CommonAPI::CallInfo *_info) {
+    delegate_->requestSessionKey(_nodeID, _nonce, _timestamp, _publicKey, _signature, _ecdhPublicKey, _internalCallStatus, _success, _gatewayPublicKey, _info);
 }
 
 template <typename ... _AttributeExtensions>
-std::future<CommonAPI::CallStatus> SecurityGatewayProxy<_AttributeExtensions...>::requestSessionKeyAsync(const uint32_t &_nodeID, const uint64_t &_nonce, const uint64_t &_timestamp, const std::vector< uint8_t > &_publicKey, const std::vector< uint8_t > &_signature, RequestSessionKeyAsyncCallback _callback, const CommonAPI::CallInfo *_info) {
-    return delegate_->requestSessionKeyAsync(_nodeID, _nonce, _timestamp, _publicKey, _signature, _callback, _info);
+std::future<CommonAPI::CallStatus> SecurityGatewayProxy<_AttributeExtensions...>::requestSessionKeyAsync(const uint32_t &_nodeID, const uint64_t &_nonce, const uint64_t &_timestamp, const std::vector< uint8_t > &_publicKey, const std::vector< uint8_t > &_signature, const std::vector< uint8_t > &_ecdhPublicKey, RequestSessionKeyAsyncCallback _callback, const CommonAPI::CallInfo *_info) {
+    return delegate_->requestSessionKeyAsync(_nodeID, _nonce, _timestamp, _publicKey, _signature, _ecdhPublicKey, _callback, _info);
 }
 
 template <typename ... _AttributeExtensions>

@@ -30,17 +30,12 @@ public:
         uint32_t _nodeID,
         uint64_t _nonce,
         uint64_t _timestamp,
-        const std::vector<uint8_t> &_publicKey,
-        const std::vector<uint8_t> &_signature,
-        bool &_success,                        // out
-        std::vector<uint8_t> &_gatewayPublicKey // out
+        const std::vector<uint8_t> &_publicKey,     // RSA 공개키 등
+        const std::vector<uint8_t> &_signature,     // RSA 서명
+        const std::vector<uint8_t> &_ecdhPublicKey,   // 노드의 ECDH 공개키 (새로운 파라미터)
+        bool &_success,                             // out: 인증 성공 여부
+        std::vector<uint8_t> &_gatewayPublicKey       // out: 게이트웨이의 공개키 (예, ECDH 공개키)
     );
-
-//    uint64_t generateNonce();
-//    uint64_t getTimestamp();
-//    std::vector<uint8_t> serializeMessage(uint32_t node_id, uint64_t nonce, uint64_t timestamp);
-
-//    void authNode();
 };
 
 

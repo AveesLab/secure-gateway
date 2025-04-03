@@ -10,12 +10,12 @@ interface SecurityGateway {
             UInt64 nonce          // 1회성 난수
             UInt64 timestamp      // 메시지 생성 시각
             UInt8 [] publicKey   // 노드의 공개키 (ECC, RSA 등)
-            UInt8 [] signature   // 노드 서명
-            
+            UInt8 [] signature   // 노드 서명 
+            UInt8 [] ecdhPublicKey 	// 노드의 ECDH 공개키
         }
         out {
             Boolean success              // 인증 성공 여부
-            UInt8 [] gatewayPublicKey // 게이트웨이 공개키
+            UInt8 [] gatewayPublicKey // 게이트웨이 ECDH 공개키
         }
     }
 }

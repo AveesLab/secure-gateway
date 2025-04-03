@@ -34,8 +34,6 @@ INCLUDEPATH += /usr/local/include
 DEPENDPATH += /usr/local/include
 
 LIBS += -lteec
-#INCLUDEPATH += /usr/include
-#DEPENDPATH += /usr/include
 
 HEADERS += \
     ../../src-gen-gateway/v1/automotive/SecurityGateway.hpp \

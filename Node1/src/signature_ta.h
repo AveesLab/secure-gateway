@@ -9,7 +9,11 @@
 #define CMD_GENKEY     0
 #define CMD_SIGN       1 
 #define CMD_GET_PUBKEY 2
+/* ECDH 관련 명령어 (DH 관련 명령어는 삭제) */
+#define CMD_GENERATE_ECDH            3
+#define CMD_COMPUTE_ECDH_SHARED_SECRET 4
 
 bool createRSAKey(TEEC_Session &sess);
 bool getRSAPublicKey(TEEC_Session &sess, std::vector<uint8_t> &pubKeyOut);
 bool signData(TEEC_Session &sess, const std::vector<uint8_t> &message, std::vector<uint8_t> &signature);
+bool getECDHPublicKey(TEEC_Session &sess, std::vector<uint8_t> &ecdhPubKeyOut);

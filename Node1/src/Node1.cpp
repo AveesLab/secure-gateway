@@ -48,6 +48,7 @@ bool SecurityGatewayClient::requestSessionKey(
     uint64_t _timestamp,
     const std::vector<uint8_t> &_publicKey,
     const std::vector<uint8_t> &_signature,
+    const std::vector<uint8_t> &_ecdhPublicKey,  // 추가된 파라미터
     bool &_success,
     std::vector<uint8_t> &_gatewayPublicKey
 )
@@ -64,9 +65,10 @@ bool SecurityGatewayClient::requestSessionKey(
         _timestamp,
         _publicKey,
         _signature,
-        callStatus,        // [out]
-        _success,          // [out]
-        _gatewayPublicKey  // [out]
+        _ecdhPublicKey,      // 새로운 ECDH 공개키 파라미터 전달
+        callStatus,          // [out]
+        _success,            // [out]
+        _gatewayPublicKey    // [out]
     );
     
     if (callStatus == CommonAPI::CallStatus::SUCCESS) {
@@ -77,7 +79,7 @@ bool SecurityGatewayClient::requestSessionKey(
         return true;
     } else {
         std::cerr << "[Client] requestSessionKey call failed. callStatus="
-                  << (int)callStatus << std::endl;
+                  << static_cast<int>(callStatus) << std::endl;
         return false;
     }
 }
@@ -150,6 +152,30 @@ bool signData(TEEC_Session &sess, const std::vector<uint8_t> &message, std::vect
 }
 //
 
+// ECDH 공개키 획득 함수 (새로운 기능)
+// ---------------------------------------------------------------
+bool getECDHPublicKey(TEEC_Session &sess, std::vector<uint8_t> &ecdhPubKeyOut) {
+    TEEC_Operation op;
+    memset(&op, 0, sizeof(op));
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE, TEEC_NONE, TEEC_NONE);
+    // TA에서 할당한 버퍼 크기와 동일하게 (예: 100바이트)
+    std::vector<uint8_t> tempBuf(100, 0);
+    op.params[0].tmpref.buffer = tempBuf.data();
+    op.params[0].tmpref.size   = tempBuf.size();
+    TEEC_Result res = TEEC_InvokeCommand(&sess, CMD_GENERATE_ECDH, &op, NULL);
+    if (res != TEEC_SUCCESS) {
+        std::cerr << "[Node-CA] CMD_GENERATE_ECDH fail: 0x" << std::hex << res << std::endl;
+        return false;
+    }
+    size_t outLen = op.params[0].tmpref.size;
+    ecdhPubKeyOut.resize(outLen);
+    memcpy(ecdhPubKeyOut.data(), tempBuf.data(), outLen);
+    std::cout << "[Node-CA] getECDHPublicKey => size=" << outLen << "\n";
+    return true;
+}
+
+// 메시지 직렬화 (예: nodeID, nonce, timestamp)
+// ---------------------------------------------------------------
 uint64_t generateNonce() {
     // 간단한 64비트 난수
     std::random_device rd;
@@ -185,57 +211,52 @@ std::vector<uint8_t> serializeMessage(uint32_t node_id, uint64_t nonce, uint64_t
 }
 
 int main() {
-    // Node ID (고정 42)
+    // 노드 정보 생성
     uint32_t node_id = 42;
-
-    // 난수 / 타임스탬프 실제 값 생성
     uint64_t nonce = generateNonce();
     uint64_t timestamp = getTimestamp();
-
     std::cout << "[Main] nodeID=" << node_id 
               << ", nonce=" << nonce 
               << ", timestamp=" << timestamp << std::endl;
-
-    // 1) TEEC 컨텍스트 및 세션 준비
+    
+    // TEEC 컨텍스트 및 세션 생성
     TEEC_Context ctx;
     TEEC_Session sess;
     TEEC_UUID uuid = TA_SIGN_UUID;
     TEEC_Result res;
-
-    // Initialize context
+    
     res = TEEC_InitializeContext(NULL, &ctx);
     if (res != TEEC_SUCCESS) {
-        std::cerr << "[Main] TEEC_InitializeContext fail 0x" << std::hex << res << std::endl;
+        std::cerr << "[Main] TEEC_InitializeContext fail: 0x" << std::hex << res << std::endl;
         return 1;
     }
-    // Open session
     res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, NULL);
     if (res != TEEC_SUCCESS) {
-        std::cerr << "[Main] TEEC_OpenSession fail 0x" << std::hex << res << std::endl;
+        std::cerr << "[Main] TEEC_OpenSession fail: 0x" << std::hex << res << std::endl;
         TEEC_FinalizeContext(&ctx);
         return 1;
     }
-
-    // 2) RSA 키 생성 (한번만)
+    
+    // 1) RSA 키 생성 (최초 1회)
     if (!createRSAKey(sess)) {
         TEEC_CloseSession(&sess);
         TEEC_FinalizeContext(&ctx);
         return 1;
     }
-
-    // 3) 공개키(모듈러스) 가져오기
-    std::vector<uint8_t> pubKey;
-    if (!getRSAPublicKey(sess, pubKey)) {
+    
+    // 2) RSA 공개키 획득
+    std::vector<uint8_t> rsaPubKey;
+    if (!getRSAPublicKey(sess, rsaPubKey)) {
         TEEC_CloseSession(&sess);
         TEEC_FinalizeContext(&ctx);
         return 1;
     }
-    std::cout << "[Main] pubKey length=" << pubKey.size() << std::endl;
-
-    // 4) 임의의 메시지 준비( nodeID, nonce, timestamp )를 직렬화
+    std::cout << "[Main] rsaPubKey length=" << rsaPubKey.size() << std::endl;
+    
+    // 3) 메시지 직렬화 (nodeID, nonce, timestamp)
     std::vector<uint8_t> message = serializeMessage(node_id, nonce, timestamp);
-
-    // 5) 서명
+    
+    // 4) 메시지 서명 (RSA 서명)
     std::vector<uint8_t> signature;
     if (!signData(sess, message, signature)) {
         TEEC_CloseSession(&sess);
@@ -243,44 +264,47 @@ int main() {
         return 1;
     }
     std::cout << "[Main] signature length=" << signature.size() << std::endl;
-
-    // TEEC 세션은 계속 유지된 상태거나, 여기서 닫아도 됨
-    // For demonstration, let's keep it open or we can close
-    TEEC_CloseSession(&sess);
-    TEEC_FinalizeContext(&ctx);
-	
-    SecurityGatewayClient client;
-
-    // 서비스 연결
-    if (!client.connectToService("gateway_service")) {
-        // cleanup TEEC
+    
+    // 5) ECDH 공개키 획득
+    std::vector<uint8_t> ecdhPubKey;
+    if (!getECDHPublicKey(sess, ecdhPubKey)) {
         TEEC_CloseSession(&sess);
         TEEC_FinalizeContext(&ctx);
         return 1;
     }
-
-    // requestSessionKey
+    std::cout << "[Main] ecdhPubKey length=" << ecdhPubKey.size() << std::endl;
+    
+    // TEEC 세션 종료
+    TEEC_CloseSession(&sess);
+    TEEC_FinalizeContext(&ctx);
+    
+    // 6) CommonAPI를 이용하여 게이트웨이와 연결하고, requestSessionKey 호출
+    SecurityGatewayClient client;
+    if (!client.connectToService("gateway_service")) {
+        return 1;
+    }
+    
     bool success = false;
     std::vector<uint8_t> gatewayPublicKey;
+    // 수정된 인터페이스: ecdhPublicKey 추가
     bool callOk = client.requestSessionKey(
-        node_id,                    // nodeID=42
-        nonce,                     // 생성된 난수
-        timestamp,                 // 생성된 타임스탬프
-        pubKey,                    // OP-TEE에서 얻은 공개키 (모듈러스 등)
-        signature,                 // OP-TEE로 서명된 값
-        success,
-        gatewayPublicKey
+        node_id,        // 노드 식별자
+        nonce,          // 1회성 난수
+        timestamp,      // 메시지 생성 시각
+        rsaPubKey,      // RSA 공개키
+        signature,      // RSA 서명
+        ecdhPubKey,     // 노드의 ECDH 공개키 (새로운 파라미터)
+        success,        // 인증 성공 여부 (out)
+        gatewayPublicKey// 게이트웨이의 공개키 (out)
     );
-
+    
     if (callOk) {
-        std::cout << "[Main] requestSessionKey callOk, success="
-                  << (success ? "true":"false")
-                  << ", gwPublicKey.size=" << gatewayPublicKey.size()
-                  << std::endl;
+        std::cout << "[Main] requestSessionKey callOk, success=" 
+                  << (success ? "true" : "false")
+                  << ", gatewayPublicKey size=" << gatewayPublicKey.size() << std::endl;
     } else {
         std::cerr << "[Main] requestSessionKey failed.\n";
     }
-
+    
     return 0;
 }
-
