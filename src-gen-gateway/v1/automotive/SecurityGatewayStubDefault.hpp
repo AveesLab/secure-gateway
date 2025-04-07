@@ -70,7 +70,8 @@ public:
         (void)_ecdhPublicKey;
         bool success = false;
         std::vector< uint8_t > gatewayPublicKey = {};
-        _reply(success, gatewayPublicKey);
+        std::vector< uint8_t > encryptedGroupKey = {};
+        _reply(success, gatewayPublicKey, encryptedGroupKey);
     }
 
 

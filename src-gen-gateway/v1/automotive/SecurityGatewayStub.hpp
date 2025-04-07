@@ -88,7 +88,7 @@ class SecurityGatewayStub
     : public virtual CommonAPI::Stub<SecurityGatewayStubAdapter, SecurityGatewayStubRemoteEvent>
 {
 public:
-    typedef std::function<void (bool _success, std::vector< uint8_t > _gatewayPublicKey)> requestSessionKeyReply_t;
+    typedef std::function<void (bool _success, std::vector< uint8_t > _gatewayPublicKey, std::vector< uint8_t > _encryptedGroupKey)> requestSessionKeyReply_t;
 
     virtual ~SecurityGatewayStub() {}
     void lockInterfaceVersionAttribute(bool _lockAccess) { static_cast<void>(_lockAccess); }

@@ -40,7 +40,7 @@ DISTNAME      = gateway1.0.0
 DISTDIR = /home/avees/secure-gateway/Gateway/src/.tmp/gateway1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-O1
-LIBS          = $(SUBLIBS) -L/usr/local/lib/ -lCommonAPI -lCommonAPI-SomeIP -lvsomeip3 /usr/lib/aarch64-linux-gnu/libQt5Gui.so /usr/lib/aarch64-linux-gnu/libQt5Core.so /usr/lib/aarch64-linux-gnu/libGL.so -lpthread   
+LIBS          = $(SUBLIBS) -L/usr/local/lib/ -lCommonAPI -lCommonAPI-SomeIP -lvsomeip3 -lteec /usr/lib/aarch64-linux-gnu/libQt5Gui.so /usr/lib/aarch64-linux-gnu/libQt5Core.so /usr/lib/aarch64-linux-gnu/libGL.so -lpthread   
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -423,7 +423,8 @@ compiler_clean: compiler_moc_predefs_clean
 SecurityGatewayStubImpl.o: SecurityGatewayStubImpl.cpp SecurityGatewayStubImpl.hpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewayStubDefault.hpp \
 		../../src-gen-gateway/v1/automotive/SecurityGatewayStub.hpp \
-		../../src-gen-gateway/v1/automotive/SecurityGateway.hpp
+		../../src-gen-gateway/v1/automotive/SecurityGateway.hpp \
+		gateway_ta.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o SecurityGatewayStubImpl.o SecurityGatewayStubImpl.cpp
 
 SecurityGatewaySomeIPDeployment.o: ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.cpp ../../src-gen-gateway/v1/automotive/SecurityGatewaySomeIPDeployment.hpp

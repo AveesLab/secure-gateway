@@ -56,7 +56,7 @@ SecurityGatewaySomeIPProxy::~SecurityGatewaySomeIPProxy() {
 
 
 
-void SecurityGatewaySomeIPProxy::requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, const CommonAPI::CallInfo *_info) {
+void SecurityGatewaySomeIPProxy::requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, std::vector< uint8_t > &_encryptedGroupKey, const CommonAPI::CallInfo *_info) {
     CommonAPI::Deployable< uint32_t, CommonAPI::SomeIP::IntegerDeployment<uint32_t>> deploy_nodeID(_nodeID, static_cast< CommonAPI::SomeIP::IntegerDeployment<uint32_t>* >(nullptr));
     CommonAPI::Deployable< uint64_t, CommonAPI::SomeIP::IntegerDeployment<uint64_t>> deploy_nonce(_nonce, static_cast< CommonAPI::SomeIP::IntegerDeployment<uint64_t>* >(nullptr));
     CommonAPI::Deployable< uint64_t, CommonAPI::SomeIP::IntegerDeployment<uint64_t>> deploy_timestamp(_timestamp, static_cast< CommonAPI::SomeIP::IntegerDeployment<uint64_t>* >(nullptr));
@@ -65,6 +65,7 @@ void SecurityGatewaySomeIPProxy::requestSessionKey(uint32_t _nodeID, uint64_t _n
     CommonAPI::Deployable< std::vector< uint8_t >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >> deploy_ecdhPublicKey(_ecdhPublicKey, static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr));
     CommonAPI::Deployable< bool, CommonAPI::EmptyDeployment> deploy_success(static_cast< CommonAPI::EmptyDeployment* >(nullptr));
     CommonAPI::Deployable< std::vector< uint8_t >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >> deploy_gatewayPublicKey(static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr));
+    CommonAPI::Deployable< std::vector< uint8_t >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >> deploy_encryptedGroupKey(static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr));
     CommonAPI::SomeIP::ProxyHelper<
         CommonAPI::SomeIP::SerializableArguments<
             CommonAPI::Deployable<
@@ -100,6 +101,10 @@ void SecurityGatewaySomeIPProxy::requestSessionKey(uint32_t _nodeID, uint64_t _n
             CommonAPI::Deployable<
                 std::vector< uint8_t >,
                 CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >
+            >,
+            CommonAPI::Deployable<
+                std::vector< uint8_t >,
+                CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >
             >
         >
     >::callMethodWithReply(
@@ -110,9 +115,10 @@ void SecurityGatewaySomeIPProxy::requestSessionKey(uint32_t _nodeID, uint64_t _n
         (_info ? _info : &CommonAPI::SomeIP::defaultCallInfo),
         deploy_nodeID, deploy_nonce, deploy_timestamp, deploy_publicKey, deploy_signature, deploy_ecdhPublicKey,
         _internalCallStatus,
-        deploy_success, deploy_gatewayPublicKey);
+        deploy_success, deploy_gatewayPublicKey, deploy_encryptedGroupKey);
     _success = deploy_success.getValue();
     _gatewayPublicKey = deploy_gatewayPublicKey.getValue();
+    _encryptedGroupKey = deploy_encryptedGroupKey.getValue();
 }
 
 std::future<CommonAPI::CallStatus> SecurityGatewaySomeIPProxy::requestSessionKeyAsync(const uint32_t &_nodeID, const uint64_t &_nonce, const uint64_t &_timestamp, const std::vector< uint8_t > &_publicKey, const std::vector< uint8_t > &_signature, const std::vector< uint8_t > &_ecdhPublicKey, RequestSessionKeyAsyncCallback _callback, const CommonAPI::CallInfo *_info) {
@@ -124,6 +130,7 @@ std::future<CommonAPI::CallStatus> SecurityGatewaySomeIPProxy::requestSessionKey
     CommonAPI::Deployable< std::vector< uint8_t >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >> deploy_ecdhPublicKey(_ecdhPublicKey, static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr));
     CommonAPI::Deployable< bool, CommonAPI::EmptyDeployment> deploy_success(static_cast< CommonAPI::EmptyDeployment* >(nullptr));
     CommonAPI::Deployable< std::vector< uint8_t >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >> deploy_gatewayPublicKey(static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr));
+    CommonAPI::Deployable< std::vector< uint8_t >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >> deploy_encryptedGroupKey(static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr));
     return CommonAPI::SomeIP::ProxyHelper<
         CommonAPI::SomeIP::SerializableArguments<
             CommonAPI::Deployable<
@@ -159,6 +166,10 @@ std::future<CommonAPI::CallStatus> SecurityGatewaySomeIPProxy::requestSessionKey
             CommonAPI::Deployable<
                 std::vector< uint8_t >,
                 CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >
+            >,
+            CommonAPI::Deployable<
+                std::vector< uint8_t >,
+                CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >
             >
         >
     >::callMethodAsync(
@@ -168,11 +179,11 @@ std::future<CommonAPI::CallStatus> SecurityGatewaySomeIPProxy::requestSessionKey
         false,
         (_info ? _info : &CommonAPI::SomeIP::defaultCallInfo),
         deploy_nodeID, deploy_nonce, deploy_timestamp, deploy_publicKey, deploy_signature, deploy_ecdhPublicKey,
-        [_callback] (CommonAPI::CallStatus _internalCallStatus, CommonAPI::Deployable< bool, CommonAPI::EmptyDeployment > _success, CommonAPI::Deployable< std::vector< uint8_t >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> > > _gatewayPublicKey) {
+        [_callback] (CommonAPI::CallStatus _internalCallStatus, CommonAPI::Deployable< bool, CommonAPI::EmptyDeployment > _success, CommonAPI::Deployable< std::vector< uint8_t >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> > > _gatewayPublicKey, CommonAPI::Deployable< std::vector< uint8_t >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> > > _encryptedGroupKey) {
             if (_callback)
-                _callback(_internalCallStatus, _success.getValue(), _gatewayPublicKey.getValue());
+                _callback(_internalCallStatus, _success.getValue(), _gatewayPublicKey.getValue(), _encryptedGroupKey.getValue());
         },
-        std::make_tuple(deploy_success, deploy_gatewayPublicKey));
+        std::make_tuple(deploy_success, deploy_gatewayPublicKey, deploy_encryptedGroupKey));
 }
 
 void SecurityGatewaySomeIPProxy::getOwnVersion(uint16_t& ownVersionMajor, uint16_t& ownVersionMinor) const {

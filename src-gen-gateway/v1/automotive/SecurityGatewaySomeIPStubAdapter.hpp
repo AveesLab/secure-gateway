@@ -56,9 +56,9 @@ public:
     CommonAPI::SomeIP::MethodWithReplyStubDispatcher<
         ::v1::automotive::SecurityGatewayStub,
         std::tuple< uint32_t, uint64_t, uint64_t, std::vector< uint8_t >, std::vector< uint8_t >, std::vector< uint8_t >>,
-        std::tuple< bool, std::vector< uint8_t >>,
+        std::tuple< bool, std::vector< uint8_t >, std::vector< uint8_t >>,
         std::tuple< CommonAPI::SomeIP::IntegerDeployment<uint32_t>, CommonAPI::SomeIP::IntegerDeployment<uint64_t>, CommonAPI::SomeIP::IntegerDeployment<uint64_t>, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >>,
-        std::tuple< CommonAPI::EmptyDeployment, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >>
+        std::tuple< CommonAPI::EmptyDeployment, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >, CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >>
     > requestSessionKeyStubDispatcher;
     
     SecurityGatewaySomeIPStubAdapterInternal(
@@ -76,7 +76,7 @@ public:
             false,
             _stub->hasElement(0),
             std::make_tuple(static_cast< CommonAPI::SomeIP::IntegerDeployment<uint32_t>* >(nullptr), static_cast< CommonAPI::SomeIP::IntegerDeployment<uint64_t>* >(nullptr), static_cast< CommonAPI::SomeIP::IntegerDeployment<uint64_t>* >(nullptr), static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr), static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr), static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr)),
-            std::make_tuple(static_cast< CommonAPI::EmptyDeployment* >(nullptr), static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr)))
+            std::make_tuple(static_cast< CommonAPI::EmptyDeployment* >(nullptr), static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr), static_cast< CommonAPI::SomeIP::ArrayDeployment< CommonAPI::SomeIP::IntegerDeployment<uint8_t> >* >(nullptr)))
         
     {
         SecurityGatewaySomeIPStubAdapterHelper::addStubDispatcher( { CommonAPI::SomeIP::method_id_t(0x7b) }, &requestSessionKeyStubDispatcher );

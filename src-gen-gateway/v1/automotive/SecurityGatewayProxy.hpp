@@ -77,7 +77,7 @@ public:
      * "SUCCESS" or which type of error has occurred. In case of an error, ONLY the CallStatus
      * will be set.
      */
-    virtual void requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, const CommonAPI::CallInfo *_info = nullptr);
+    virtual void requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, std::vector< uint8_t > &_encryptedGroupKey, const CommonAPI::CallInfo *_info = nullptr);
     /**
      * Calls requestSessionKey with asynchronous semantics.
      *
@@ -113,8 +113,8 @@ SecurityGatewayProxy<_AttributeExtensions...>::~SecurityGatewayProxy() {
 }
 
 template <typename ... _AttributeExtensions>
-void SecurityGatewayProxy<_AttributeExtensions...>::requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, const CommonAPI::CallInfo *_info) {
-    delegate_->requestSessionKey(_nodeID, _nonce, _timestamp, _publicKey, _signature, _ecdhPublicKey, _internalCallStatus, _success, _gatewayPublicKey, _info);
+void SecurityGatewayProxy<_AttributeExtensions...>::requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, std::vector< uint8_t > &_encryptedGroupKey, const CommonAPI::CallInfo *_info) {
+    delegate_->requestSessionKey(_nodeID, _nonce, _timestamp, _publicKey, _signature, _ecdhPublicKey, _internalCallStatus, _success, _gatewayPublicKey, _encryptedGroupKey, _info);
 }
 
 template <typename ... _AttributeExtensions>

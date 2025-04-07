@@ -53,7 +53,7 @@ public:
 
     virtual ~SecurityGatewaySomeIPProxy();
 
-    virtual void requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, const CommonAPI::CallInfo *_info);
+    virtual void requestSessionKey(uint32_t _nodeID, uint64_t _nonce, uint64_t _timestamp, std::vector< uint8_t > _publicKey, std::vector< uint8_t > _signature, std::vector< uint8_t > _ecdhPublicKey, CommonAPI::CallStatus &_internalCallStatus, bool &_success, std::vector< uint8_t > &_gatewayPublicKey, std::vector< uint8_t > &_encryptedGroupKey, const CommonAPI::CallInfo *_info);
 
     virtual std::future<CommonAPI::CallStatus> requestSessionKeyAsync(const uint32_t &_nodeID, const uint64_t &_nonce, const uint64_t &_timestamp, const std::vector< uint8_t > &_publicKey, const std::vector< uint8_t > &_signature, const std::vector< uint8_t > &_ecdhPublicKey, RequestSessionKeyAsyncCallback _callback, const CommonAPI::CallInfo *_info);
 
