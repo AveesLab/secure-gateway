@@ -8,6 +8,7 @@
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <CommonAPI/CommonAPI.hpp>
 #include <v1/automotive/SecurityGatewayStubDefault.hpp>
 

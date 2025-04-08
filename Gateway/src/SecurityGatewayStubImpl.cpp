@@ -1,25 +1,16 @@
 #include "SecurityGatewayStubImpl.hpp"
 #include "gateway_ta.h"  // TA 명령어, UUID 등 정의 (헤더파일 예제 참조)
 #include <tee_client_api.h>
-#include <random>
-#include <chrono>
-#include <cstring>
 
-// 노드에서 직렬화한 방식과 동일하게 노드ID, 난수, 타임스탬프를 직렬화하는 함수
+// 노드에서 직렬화한 방식과 동일하게 nodeID, nonce, timestamp를 직렬화하는 함수
 static std::vector<uint8_t> serializeMessage(uint32_t nodeID, uint64_t nonce, uint64_t timestamp) {
     std::vector<uint8_t> serialized;
-    // nodeID (4바이트, 리틀 엔디언)
-    for (int i = 0; i < 4; ++i) {
-        serialized.push_back((nodeID >> (8 * i)) & 0xFF);
-    }
-    // nonce (8바이트)
-    for (int i = 0; i < 8; ++i) {
-        serialized.push_back((nonce >> (8 * i)) & 0xFF);
-    }
-    // timestamp (8바이트)
-    for (int i = 0; i < 8; ++i) {
-        serialized.push_back((timestamp >> (8 * i)) & 0xFF);
-    }
+    for (int i = 0; i < 4; ++i)
+        serialized.push_back(static_cast<uint8_t>((nodeID >> (8 * i)) & 0xFF));
+    for (int i = 0; i < 8; ++i)
+        serialized.push_back(static_cast<uint8_t>((nonce >> (8 * i)) & 0xFF));
+    for (int i = 0; i < 8; ++i)
+        serialized.push_back(static_cast<uint8_t>((timestamp >> (8 * i)) & 0xFF));
     return serialized;
 }
 
@@ -27,14 +18,16 @@ SecurityGatewayStubImpl::SecurityGatewayStubImpl() { }
 SecurityGatewayStubImpl::~SecurityGatewayStubImpl() { }
 
 /*
- * 수정된 requestSessionKey:
- * - 추가 파라미터 _ecdhPublicKey: 노드 측 ECDH 공개키
- * - 기존: RSA 공개키, 서명, (노드ID, 난수, 타임스탬프)를 검증한 후,
- * - 수정: 서명 검증 성공 시
- *     [1] TA의 CMD_GENERATE_ECDH를 호출해 게이트웨이 ECDH 공개키를 생성하고,
- *     [2] 노드의 ECDH 공개키를 이용해 CMD_COMPUTE_ECDH_SHARED_SECRET를 호출하여 세션키(공유비밀)를 도출한 후,
- *     [3] TA의 store_group_key 기능(CMD_STORE_GROUP_KEY)을 이용해 그룹키를 TA 내부에서 생성·저장하고 생성된 그룹키를 반환받고,
- *     [4] 도출한 세션키로 TA의 CMD_ENCRYPT_GROUP_KEY를 호출하여, 평문 그룹키를 AES‑GCM 암호화한 결과(IV, 태그, 암호문)를 구성하여 반환합니다.
+ * requestSessionKey:
+ *  - 추가 파라미터 _ecdhPublicKey: 노드 측 ECDH 공개키 전달
+ *  - [A] 노드의 RSA 공개키를 TA에 저장
+ *  - [C] (nodeID, nonce, timestamp) 직렬화 및 서명 검증
+ *  - [D] 서명 검증 성공 시, 게이트웨이 TA의 CMD_GENERATE_ECDH를 호출하여 게이트웨이 ECDH 공개키 생성
+ *  - [E] 노드의 ECDH 공개키를 이용해 CMD_COMPUTE_ECDH_SHARED_SECRET을 호출하여 공유 비밀(세션키) 도출
+ *  - [F] 도출한 공유 비밀을 AES-GCM 키로 사용하여 TA에서 하드코딩된 그룹키를 암호화(CMD_ENCRYPT_GROUP_KEY)한 결과,
+ *        즉, [IV || tag || ciphertext]를 최종 노드에 전달합니다.
+ * 
+ * 여기서는 그룹키 복호화는 수행하지 않고, 암호화된 그룹키를 그대로 반환합니다.
  */
 void SecurityGatewayStubImpl::requestSessionKey(
     const std::shared_ptr<CommonAPI::ClientId> _client,
@@ -43,8 +36,8 @@ void SecurityGatewayStubImpl::requestSessionKey(
     uint64_t _timestamp,
     std::vector<uint8_t> _publicKey,      // 노드의 RSA 공개키
     std::vector<uint8_t> _signature,      // 노드의 서명
-    std::vector<uint8_t> _ecdhPublicKey,  // 노드의 ECDH 공개키 (추가된 파라미터)
-    requestSessionKeyReply_t _reply)
+    std::vector<uint8_t> _ecdhPublicKey,  // 노드의 ECDH 공개키
+    requestSessionKeyReply_t _reply)      // [out] 콜백 인터페이스
 {
     std::cout << "[StubImpl] requestSessionKey called" << std::endl;
     std::cout << " - nodeID: " << _nodeID 
@@ -70,7 +63,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
     TEEC_Result res;
     TEEC_UUID uuid = TA_GATEWAY_UUID;  // 게이트웨이 TA UUID
 
-    // TEE 컨텍스트 초기화
+    // TEE 컨텍스트 초기화 및 세션 열기
     res = TEEC_InitializeContext(NULL, &ctx);
     if (res != TEEC_SUCCESS) {
         std::cerr << "[StubImpl] TEEC_InitializeContext failed: 0x"
@@ -78,7 +71,6 @@ void SecurityGatewayStubImpl::requestSessionKey(
         _reply(false, gatewayPublicKey, encryptedGroupKey);
         return;
     }
-    // TA와 세션 열기
     res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, NULL);
     if (res != TEEC_SUCCESS) {
         std::cerr << "[StubImpl] TEEC_OpenSession failed: 0x"
@@ -88,7 +80,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
         return;
     }
 
-    // [1] 노드의 RSA 공개키 저장 시도 (이미 등록되어 있다면 무시)
+    // [A] 노드의 RSA 공개키 저장
     {
         TEEC_Operation opStore;
         memset(&opStore, 0, sizeof(opStore));
@@ -117,20 +109,20 @@ void SecurityGatewayStubImpl::requestSessionKey(
         }
     }
 
-    // [2] 서명 검증: 노드가 직렬화한 (nodeID, nonce, timestamp) 메시지와 서명 데이터를 이용
+    // [C] 서명 검증: (nodeID, nonce, timestamp) 직렬화한 메시지와 서명 사용
     {
-        std::vector<uint8_t> message = serializeMessage(_nodeID, _nonce, _timestamp);
+        std::vector<uint8_t> msg = serializeMessage(_nodeID, _nonce, _timestamp);
         TEEC_Operation opVerify;
         memset(&opVerify, 0, sizeof(opVerify));
         opVerify.paramTypes = TEEC_PARAM_TYPES(
             TEEC_VALUE_INPUT,       // 노드 ID
-            TEEC_MEMREF_TEMP_INPUT, // 원본 메시지
+            TEEC_MEMREF_TEMP_INPUT, // 메시지 데이터
             TEEC_MEMREF_TEMP_INPUT, // 서명 데이터
             TEEC_MEMREF_TEMP_OUTPUT // 검증 결과 (uint32_t)
         );
         opVerify.params[0].value.a = _nodeID;
-        opVerify.params[1].tmpref.buffer = message.data();
-        opVerify.params[1].tmpref.size = message.size();
+        opVerify.params[1].tmpref.buffer = msg.data();
+        opVerify.params[1].tmpref.size = msg.size();
         opVerify.params[2].tmpref.buffer = _signature.data();
         opVerify.params[2].tmpref.size = _signature.size();
         uint32_t verificationResult = 0;
@@ -150,7 +142,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
         }
     }
 
-    // [3] 서명 검증 성공 시, 게이트웨이 TA의 CMD_GENERATE_ECDH를 호출하여 게이트웨이의 ECDH 공개키 생성
+    // [D] 서명 검증 성공 시, 게이트웨이 TA의 CMD_GENERATE_ECDH를 호출하여 게이트웨이의 ECDH 공개키 생성
     if (success) {
         TEEC_Operation opECDH;
         memset(&opECDH, 0, sizeof(opECDH));
@@ -177,7 +169,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
         }
     }
 
-    // [4] 노드의 ECDH 공개키(_ecdhPublicKey)를 이용하여 TA의 CMD_COMPUTE_ECDH_SHARED_SECRET 호출 -> 공유 비밀(세션키) 도출
+    // [E] 노드의 ECDH 공개키(_ecdhPublicKey)를 이용해 CMD_COMPUTE_ECDH_SHARED_SECRET 호출하여 공유 비밀 도출
     std::vector<uint8_t> sharedSecret;
     if (success) {
         TEEC_Operation opCompute;
@@ -207,37 +199,8 @@ void SecurityGatewayStubImpl::requestSessionKey(
         }
     }
 
-    // [5] 그룹키 생성 및 저장: TA의 CMD_STORE_GROUP_KEY 호출 (입/출력 버퍼 사용)
-    //    -> TA 내부에서 TEE_GenerateRandom()로 그룹키를 생성하여 저장하고, 생성된 그룹키를 입력 버퍼에 기록했다고 가정
-    std::vector<uint8_t> plaintextGroupKey(32, 0); // 32바이트 버퍼
-    if (success) {
-        TEEC_Operation opStoreGroup;
-        memset(&opStoreGroup, 0, sizeof(opStoreGroup));
-        // TEEC_MEMREF_TEMP_INOUT: TA에서 생성한 그룹키가 클라이언트로 복사됨
-        opStoreGroup.paramTypes = TEEC_PARAM_TYPES(
-            TEEC_MEMREF_TEMP_INOUT,
-            TEEC_NONE,
-            TEEC_NONE,
-            TEEC_NONE
-        );
-        opStoreGroup.params[0].tmpref.buffer = plaintextGroupKey.data();
-        opStoreGroup.params[0].tmpref.size = plaintextGroupKey.size();
-        res = TEEC_InvokeCommand(&sess, CMD_STORE_GROUP_KEY, &opStoreGroup, NULL);
-        if (res == TEE_ERROR_ITEM_ALREADY_EXISTS) {
-            std::cout << "[StubImpl] Group key already exists." << std::endl;
-            // In this case, plaintextGroupKey remains unchanged.
-        } else if (res != TEEC_SUCCESS) {
-            std::cerr << "[StubImpl] CMD_STORE_GROUP_KEY failed: 0x" 
-                      << std::hex << res << std::endl;
-            success = false;
-        } else {
-            std::cout << "[StubImpl] Group key generated and stored in TA." << std::endl;
-            // plaintextGroupKey now contains the generated key.
-        }
-    }
-
-    // [6] 그룹키 암호화: 도출된 공유 비밀(sharedSecret)을 AES-GCM 키로 사용하여, 평문 그룹키를 암호화
-    //     TA의 CMD_ENCRYPT_GROUP_KEY를 호출하여 암호문과 인증 태그를 얻고, 최종적으로 [IV || tag || ciphertext] 형태로 구성
+    // [F] 그룹키 암호화: 도출한 공유 비밀(sharedSecret)을 AES-GCM 키로 사용하여,
+    //     TA의 CMD_ENCRYPT_GROUP_KEY를 호출, 결과로 [IV || tag || ciphertext] 구성
     if (success) {
         // 랜덤 IV (12바이트) 생성
         std::vector<uint8_t> iv(12, 0);
@@ -249,15 +212,15 @@ void SecurityGatewayStubImpl::requestSessionKey(
         }
         // 인증 태그 버퍼 (16바이트)
         std::vector<uint8_t> tag(16, 0);
-        // 복호화 후 평문 그룹키의 길이와 동일한 암호문 버퍼 (초기 크기는 평문 그룹키 크기)
-        std::vector<uint8_t> encryptedBuffer = plaintextGroupKey; // in/out
+        // 암호화 결과 버퍼 (평문 그룹키와 동일 크기; 32바이트)
+        std::vector<uint8_t> encryptedBuffer(32, 0);
 
         TEEC_Operation opEncrypt;
         memset(&opEncrypt, 0, sizeof(opEncrypt));
         opEncrypt.paramTypes = TEEC_PARAM_TYPES(
             TEEC_MEMREF_TEMP_INPUT,    // 공유 비밀 (세션키)
             TEEC_MEMREF_TEMP_INPUT,    // IV
-            TEEC_MEMREF_TEMP_INOUT,    // 평문 그룹키 -> 암호문으로 대체
+            TEEC_MEMREF_TEMP_INOUT,    // 암호문 (출력 버퍼)
             TEEC_MEMREF_TEMP_OUTPUT    // 인증 태그
         );
         opEncrypt.params[0].tmpref.buffer = sharedSecret.data();
@@ -275,9 +238,9 @@ void SecurityGatewayStubImpl::requestSessionKey(
                       << std::hex << res << std::endl;
             success = false;
         } else {
-            size_t cipherLen = opEncrypt.params[2].tmpref.size;
-            encryptedBuffer.resize(cipherLen);
-            // 최종적으로 encryptedGroupKey를 [IV || tag || 암호문]으로 구성
+            // 최종 암호화 결과는 평문 그룹키와 동일한 길이 (32바이트)
+            encryptedBuffer.resize(opEncrypt.params[2].tmpref.size);
+            // 최종적으로 encryptedGroupKey는 [IV || tag || ciphertext]로 구성됨
             encryptedGroupKey.clear();
             encryptedGroupKey.insert(encryptedGroupKey.end(), iv.begin(), iv.end());
             encryptedGroupKey.insert(encryptedGroupKey.end(), tag.begin(), tag.end());
@@ -290,7 +253,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
     TEEC_CloseSession(&sess);
     TEEC_FinalizeContext(&ctx);
 
-    // 최종 결과 전달: 서명 검증, ECDH 키 생성, 공유 비밀 도출, 그룹키 생성/암호화 모두 성공 시 true 반환
+    // 최종 결과를 콜백으로 전달 (암호화된 그룹키 및 게이트웨이의 ECDH 공개키)
     _reply(success, gatewayPublicKey, encryptedGroupKey);
 }
 
@@ -307,4 +270,3 @@ int main() {
     }
     return 0;
 }
-
