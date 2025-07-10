@@ -9,8 +9,12 @@
 #include <iostream>
 #include <memory>
 #include <random>
+#include <iomanip>
+#include <fstream>
 #include <CommonAPI/CommonAPI.hpp>
 #include <v1/automotive/SecurityGatewayStubDefault.hpp>
+
+#define IV_LEN                12
 
 using namespace v1_0::automotive;
 
