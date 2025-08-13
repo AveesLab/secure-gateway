@@ -12,7 +12,6 @@ constexpr bool ENABLE_SMK_REQUEST      = true; // SMK 교환 지연 측정 실�
 constexpr bool ENABLE_ECU_DERIVATION   = false; // ECU 키 파생 지연 측정 실행 여부
 
 constexpr bool SINGLE_KEY_DERIVATION_MODE = false; 
-
 constexpr uint32_t TARGET_KEY_SECURITY_LEVEL   = SEC_LEVEL_AES_GCM_256_KEY; 
 constexpr size_t   TARGET_KEY_EXPECTED_LENGTH  = 32; // 바이트 단위
 const std::string  TARGET_KEY_NAME_FOR_CSV     = "AES256"; //"CMAC_AES128"; 
@@ -284,7 +283,7 @@ int main() {
     using millis = std::chrono::milliseconds;
 
     // 1) CSV 파일 준비
-    std::string csv_filename = (!ENABLE_ECU_DERIVATION || !SINGLE_KEY_DERIVATION_MODE)
+    std::string csv_filename = ENABLE_ECU_DERIVATION && !SINGLE_KEY_DERIVATION_MODE
         ? "latency_results_all_operations.csv"
         : "latency_results_single_key_" + TARGET_KEY_NAME_FOR_CSV + ".csv";
     std::ofstream csv_file(csv_filename);
@@ -329,74 +328,105 @@ int main() {
         std::cout << "--- Iteration " << iter << " ---\n";
         auto total_start = Clock::now();
 
+        if(ENABLE_SMK_REQUEST){
+            bool ok = false;
+            uint64_t lat = 0;
 
-        bool ok = false;
-        uint64_t lat = 0;
+            // 4.1 ECDSA 키 생성
+            lat = measureLatency([&]{ ok = createECDSAKey(teec_sess); });
+            csv_file << iter << ",SMK_createECDSAKey,-,-,-," << lat << "," << (ok ? "success" : "fail") << "\n";
+            if (!ok) continue;
 
-        // 4.1 ECDSA 키 생성
-        lat = measureLatency([&]{ ok = createECDSAKey(teec_sess); });
-        csv_file << iter << ",SMK_createECDSAKey,-,-,-," << lat << "," << (ok ? "success" : "fail") << "\n";
-        if (!ok) continue;
+            // 4.2 ECDSA 공개키 읽기
+            std::vector<uint8_t> pubKey;
+            lat = measureLatency([&]{ ok = getECDSAPublicKey(teec_sess, pubKey); });
+            csv_file << iter << ",SMK_getECDSAPublicKey,-,-," << pubKey.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
+            if (!ok) continue;
 
-        // 4.2 ECDSA 공개키 읽기
-        std::vector<uint8_t> pubKey;
-        lat = measureLatency([&]{ ok = getECDSAPublicKey(teec_sess, pubKey); });
-        csv_file << iter << ",SMK_getECDSAPublicKey,-,-," << pubKey.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
-        if (!ok) continue;
+            // 4.3 서명
+            uint64_t nonce = generateNonce();
+            uint64_t ts    = getTimestamp();
+            auto msg       = serializeMessage(42, nonce, ts);
+            std::vector<uint8_t> signature;
+            lat = measureLatency([&]{ ok = signDataECDSA(teec_sess, msg, signature); });
+            csv_file << iter << ",SMK_signDataECDSA,-,-," << signature.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
+            if (!ok) continue;
 
-        // 4.3 서명
-        uint64_t nonce = generateNonce();
-        uint64_t ts    = getTimestamp();
-        auto msg       = serializeMessage(42, nonce, ts);
-        std::vector<uint8_t> signature;
-        lat = measureLatency([&]{ ok = signDataECDSA(teec_sess, msg, signature); });
-        csv_file << iter << ",SMK_signDataECDSA,-,-," << signature.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
-        if (!ok) continue;
+            // 4.4 ECDH 공개키 생성
+            std::vector<uint8_t> myEcdhPub;
+            lat = measureLatency([&]{ ok = getMyECDHPublicKey(teec_sess, myEcdhPub); });
+            csv_file << iter << ",SMK_getMyECDHPublicKey,-,-," << myEcdhPub.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
+            if (!ok) continue;
 
-        // 4.4 ECDH 공개키 생성
-        std::vector<uint8_t> myEcdhPub;
-        lat = measureLatency([&]{ ok = getMyECDHPublicKey(teec_sess, myEcdhPub); });
-        csv_file << iter << ",SMK_getMyECDHPublicKey,-,-," << myEcdhPub.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
-        if (!ok) continue;
+            // 4.5 Gateway 세션키 요청
+            std::vector<uint8_t> gwEcdhPub, encSmkPayload;
+            bool gwLogicOk = false;
+            lat = measureLatency([&]{
+                ok = gwClient.requestSessionKey(
+                    42, nonce, ts,
+                    pubKey, signature, myEcdhPub,
+                    gwLogicOk, gwEcdhPub, encSmkPayload
+                ) && gwLogicOk;
+            });
+            csv_file << iter << ",SMK_requestSessionKeyToGateway,-,-," << encSmkPayload.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
+            if (!ok) continue;
 
-        // 4.5 Gateway 세션키 요청
-        std::vector<uint8_t> gwEcdhPub, encSmkPayload;
-        bool gwLogicOk = false;
-        lat = measureLatency([&]{
-            ok = gwClient.requestSessionKey(
-                42, nonce, ts,
-                pubKey, signature, myEcdhPub,
-                gwLogicOk, gwEcdhPub, encSmkPayload
-            ) && gwLogicOk;
-        });
-        csv_file << iter << ",SMK_requestSessionKeyToGateway,-,-," << encSmkPayload.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
-        if (!ok) continue;
+            // 4.6 ECDH 공유 비밀 계산
+            std::vector<uint8_t> sessionKey;
+            lat = measureLatency([&]{ ok = computeMyECDHSharedSecret(teec_sess, gwEcdhPub, sessionKey); });
+            csv_file << iter << ",SMK_computeMyECDHSharedSecret,-,-," << sessionKey.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
+            if (!ok) continue;
 
-        // 4.6 ECDH 공유 비밀 계산
-        std::vector<uint8_t> sessionKey;
-        lat = measureLatency([&]{ ok = computeMyECDHSharedSecret(teec_sess, gwEcdhPub, sessionKey); });
-        csv_file << iter << ",SMK_computeMyECDHSharedSecret,-,-," << sessionKey.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
-        if (!ok) continue;
+            // 4.7a SMK 복호화만
+            std::vector<uint8_t> iv(encSmkPayload.begin(), encSmkPayload.begin() + AES_GCM_IV_SIZE);
+            std::vector<uint8_t> cipherAndTag(encSmkPayload.begin() + AES_GCM_IV_SIZE, encSmkPayload.end());
+            std::vector<uint8_t> plainSMK;
+            lat = measureLatency([&]{ ok = decryptSMK(teec_sess, sessionKey, iv, cipherAndTag, plainSMK); });
+            csv_file << iter << ",SMK_decrypt_only,-,-," << plainSMK.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
+            if (!ok) continue;
 
-        // 4.7a SMK 복호화만
-        std::vector<uint8_t> iv(encSmkPayload.begin(), encSmkPayload.begin() + AES_GCM_IV_SIZE);
-        std::vector<uint8_t> cipherAndTag(encSmkPayload.begin() + AES_GCM_IV_SIZE, encSmkPayload.end());
-        std::vector<uint8_t> plainSMK;
-        lat = measureLatency([&]{ ok = decryptSMK(teec_sess, sessionKey, iv, cipherAndTag, plainSMK); });
-        csv_file << iter << ",SMK_decrypt_only,-,-," << plainSMK.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
-        if (!ok) continue;
-
-        // 4.7b SMK 저장만
-        lat = measureLatency([&]{ ok = storeSMK(teec_sess, plainSMK); });
-        csv_file << iter << ",SMK_store_only,-,-," << plainSMK.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
-        if (!ok) continue;
+            // 4.7b SMK 저장만
+            lat = measureLatency([&]{ ok = storeSMK(teec_sess, plainSMK); });
+            csv_file << iter << ",SMK_store_only,-,-," << plainSMK.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
+            if (!ok) continue;
+        }
+        
 
         // 4.8 ECU 키 파생 (옵션)
         if (ENABLE_ECU_DERIVATION) {
             uint32_t base_id = 1000 + iter * 100;
-            // 단일 모드
-            if (SINGLE_KEY_DERIVATION_MODE) {
-                uint32_t ecu_id = base_id + TARGET_KEY_SECURITY_LEVEL;
+            if (!SINGLE_KEY_DERIVATION_MODE) {
+                struct Test { const char* name; uint32_t lvl; size_t len; uint32_t off; };
+                constexpr Test tests[] = {
+                    {"CMAC_AES128",       SEC_LEVEL_CMAC_AES128_KEY,       16, 1},
+                    {"HMAC_SHA256",       SEC_LEVEL_HMAC_SHA256_KEY,       32, 2},
+                    {"AES_ENC_128",       SEC_LEVEL_AES_ENC_128_KEY,       16, 3},
+                    {"AES_ENC_256",       SEC_LEVEL_AES_ENC_256_KEY,       32, 4},
+                    {"AES_GCM_128",       SEC_LEVEL_AES_GCM_128_KEY,       16, 5},
+                    {"AES_GCM_256",       SEC_LEVEL_AES_GCM_256_KEY,       32, 6},
+                };
+                for (auto &t : tests) {
+                    std::vector<uint8_t> derived;
+                    bool ok2 = false;
+                    uint64_t lat2 = measureLatency([&]{
+                        ok2 = deriveECUKeyFromTA(teec_sess,
+                                                base_id + t.off,
+                                                t.lvl,
+                                                t.len,
+                                                derived);
+                    });
+                    csv_file
+                        << iter
+                        << ",deriveECUKey_" << t.name
+                        << "," << (base_id + t.off)
+                        << "," << t.lvl
+                        << "," << derived.size()
+                        << "," << lat2
+                        << "," << (ok2 ? "success" : "fail")
+                        << "\n";
+                }
+            } else {
+                uint32_t ecu_id = 1000 + iter * 100 + TARGET_KEY_SECURITY_LEVEL;
                 std::vector<uint8_t> derived;
                 bool ok2 = false;
                 uint64_t lat2 = measureLatency([&]{
@@ -407,47 +437,14 @@ int main() {
                                             derived);
                 });
                 csv_file
-                << iter
-                << ",deriveECUKey_" << TARGET_KEY_NAME_FOR_CSV
-                << "," << ecu_id
-                << "," << TARGET_KEY_SECURITY_LEVEL
-                << "," << (ok2 ? derived.size() : 0)
-                << "," << lat2
-                << "," << (ok2 ? "success" : "fail_derive_ecu_key")
-                << "\n";
-            }
-            // 멀티 모드
-            else {
-                struct Test { std::string name; uint32_t lvl; size_t len; uint32_t off; };
-                std::vector<Test> tests = {
-                    {"CMAC_AES128",   SEC_LEVEL_CMAC_AES128_KEY, 16, 1},
-                    {"HMAC_SHA256",   SEC_LEVEL_HMAC_SHA256_KEY, 32, 2},
-                    {"AES_ENC_128",   SEC_LEVEL_AES_ENC_128_KEY, 16, 3},
-                    {"AES_ENC_256",   SEC_LEVEL_AES_ENC_256_KEY, 32, 4},
-                    {"AES_GCM_128",   SEC_LEVEL_AES_GCM_128_KEY, 16, 5},
-                    {"AES_GCM_256",   SEC_LEVEL_AES_GCM_256_KEY, 32, 6},
-                };
-                for (auto &t : tests) {
-                    uint32_t ecu_id = base_id + t.off;
-                    std::vector<uint8_t> derived;
-                    bool ok2 = false;
-                    uint64_t lat2 = measureLatency([&]{
-                        ok2 = deriveECUKeyFromTA(teec_sess,
-                                                ecu_id,
-                                                t.lvl,
-                                                t.len,
-                                                derived);
-                    });
-                    csv_file
                     << iter
-                    << ",deriveECUKey_" << t.name
+                    << ",deriveECUKey_" << TARGET_KEY_NAME_FOR_CSV
                     << "," << ecu_id
-                    << "," << t.lvl
-                    << "," << (ok2 ? derived.size() : 0)
+                    << "," << TARGET_KEY_SECURITY_LEVEL
+                    << "," << derived.size()
                     << "," << lat2
-                    << "," << (ok2 ? "success" : "fail_derive_ecu_key")
+                    << "," << (ok2 ? "success" : "fail")
                     << "\n";
-                }
             }
         }
         else {

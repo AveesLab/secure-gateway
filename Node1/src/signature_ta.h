@@ -46,5 +46,7 @@
 // 기밀성 + 무결성 (Authenticated Encryption)
 #define SEC_LEVEL_AES_GCM_128_KEY     20 // AES-128 GCM용 키 (16 바이트)
 #define SEC_LEVEL_AES_GCM_256_KEY     21 // AES-256 GCM용 키 (32 바이트)
+//#define SEC_LEVEL_CHACHA20_POLY1305_KEY  22 // CHACHA20_POLY1305용 키 (32 바이트)
+
 
 #endif /* TA_SIGN_H */
