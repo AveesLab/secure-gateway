@@ -25,7 +25,7 @@ uint64_t measureLatency(F&& func) {
     auto t0 = std::chrono::high_resolution_clock::now();
     func();
     auto t1 = std::chrono::high_resolution_clock::now();
-    return std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
 }
 
 // 2) 유틸 함수
@@ -277,7 +277,7 @@ void set_cpu_affinity(int core_id) {
 
 // main 함수
 int main() {
-//    set_cpu_affinity(11);  // 예: 코어 0에 고정
+    set_cpu_affinity(11);  // 예: 코어 0에 고정
 
     using Clock = std::chrono::high_resolution_clock;
     using millis = std::chrono::milliseconds;
