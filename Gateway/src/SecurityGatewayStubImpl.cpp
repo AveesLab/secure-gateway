@@ -103,6 +103,23 @@ struct CsvLogger {
     }
 };
 
+static void logAndPrint(CsvLogger& csv,
+                        uint32_t nodeID,
+                        const std::string& step,
+                        uint64_t latency_us,
+                        bool ok,
+                        size_t size_bytes = 0) {
+    // CSV 기록
+    csv.log(nodeID, step, latency_us, ok, size_bytes);
+
+    // 콘솔 출력
+    std::cout << "[SEC][" << nodeID << "] "
+              << step << ": " << (ok ? "OK" : "FAIL")
+              << " (" << latency_us << " us";
+    if (size_bytes > 0) std::cout << ", size=" << size_bytes;
+    std::cout << ")\n";
+}
+
 
 static std::vector<uint8_t> serializeMessage(uint32_t nodeID, uint64_t nonce, uint64_t timestamp) {
     std::vector<uint8_t> serialized;
@@ -284,8 +301,9 @@ void SecurityGatewayStubImpl::requestSessionKey(
     //constexpr size_t TAG_SIZE            = 16;
     //constexpr size_t IV_LEN              = 12;
 
-    if (!(_nodeID == 42 || _nodeID == 45 || _nodeID == 46 || _nodeID == 43 ||_nodeID == 44 ||_nodeID == 82 ||_nodeID == 92 ||_nodeID == 47)) {
+    if (!(_nodeID == 42 || _nodeID == 45 || _nodeID == 46 || _nodeID == 43 ||_nodeID == 44 ||_nodeID == 82 ||_nodeID == 92 || _nodeID == 47 || _nodeID == 12 || _nodeID == 55 || _nodeID == 56 || _nodeID == 53 ||_nodeID == 54 ||_nodeID == 102 ||_nodeID == 103 || _nodeID == 99 )) {
         csv.log(_nodeID, "reject_nodeID", 0, false);
+        std::cout << "[SEC][" << _nodeID << "] reject_nodeID: FAIL (unauthorized)\n";
         _reply(false, {}, {});
         return;
     }
@@ -303,7 +321,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
 
         latency = measureLatency([&]{ return (TEEC_InitializeContext(NULL, &ctx) == TEEC_SUCCESS); }, ok);
         if(!ok){ csv.log(_nodeID,"InitCtx",latency,false); _reply(false,{},{ }); return; }
-        csv.log(_nodeID,"InitCtx",latency,true);
+        logAndPrint(csv, _nodeID,"InitCtx",latency,true);
 
         latency = measureLatency([&]{
             TEEC_UUID uuid = TA_GATEWAY_UUID;
@@ -311,7 +329,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
             return (res==TEEC_SUCCESS);
         }, ok);
         if(!ok){ csv.log(_nodeID,"OpenSess",latency,false); TEEC_FinalizeContext(&ctx); _reply(false,{},{ }); return; }
-        csv.log(_nodeID,"OpenSess",latency,true);
+        logAndPrint(csv, _nodeID,"OpenSess",latency,true);
 
         // [A] STORE_NODE_PUBKEY
         latency = measureLatency([&]{
@@ -323,7 +341,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
             res = TEEC_InvokeCommand(&sess, CMD_STORE_NODE_PUBKEY, &op, NULL);
             return (res==TEEC_SUCCESS || res==TEE_ERROR_ITEM_ALREADY_EXISTS);
         }, ok);
-        csv.log(_nodeID,"StoreNodePub",latency,ok,_publicKey.size());
+        logAndPrint(csv, _nodeID,"StoreNodePub",latency,ok,_publicKey.size());
         if(!ok){ TEEC_CloseSession(&sess); TEEC_FinalizeContext(&ctx); _reply(false,{},{ }); return; }
 
         // [C] VERIFY_SIGNATURE
@@ -338,7 +356,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
             res = TEEC_InvokeCommand(&sess, CMD_VERIFY_SIGNATURE, &op, NULL);
             return (res==TEEC_SUCCESS && verifyResult==1);
         }, ok);
-        csv.log(_nodeID,"VerifySig",latency,ok,_signature.size());
+        logAndPrint(csv, _nodeID,"VerifySig",latency,ok,_signature.size());
         if(!ok){ TEEC_CloseSession(&sess); TEEC_FinalizeContext(&ctx); _reply(false,{},{ }); return; }
 
         // [D] GENERATE_ECDH
@@ -351,7 +369,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
             gwPub.resize(op.params[0].tmpref.size);
             return (res==TEEC_SUCCESS);
         }, ok);
-        csv.log(_nodeID,"GenECDH",latency,ok,gwPub.size());
+        logAndPrint(csv, _nodeID,"GenECDH",latency,ok,gwPub.size());
         if(!ok){ TEEC_CloseSession(&sess); TEEC_FinalizeContext(&ctx); _reply(false,{},{ }); return; }
 
         // [E] COMPUTE_SHARED_SECRET
@@ -365,7 +383,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
             sharedSecret.resize(op.params[1].tmpref.size);
             return (res==TEEC_SUCCESS);
         }, ok);
-        csv.log(_nodeID,"ECDHShared",latency,ok,sharedSecret.size());
+        logAndPrint(csv, _nodeID,"ECDHShared",latency,ok,sharedSecret.size());
         if(!ok){ TEEC_CloseSession(&sess); TEEC_FinalizeContext(&ctx); _reply(false,{},{ }); return; }
 
         // [F] DERIVE_SUB_MASTER_KEY — TA는 IKM=master_key(고정), info=msg
@@ -379,7 +397,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
             res = TEEC_InvokeCommand(&sess, CMD_DERIVE_SUB_MASTER_KEY, &op, NULL);
             return (res==TEEC_SUCCESS);
         }, ok);
-        csv.log(_nodeID,"DeriveSMK",latency,ok,subMasterKey.size());
+        logAndPrint(csv, _nodeID,"DeriveSMK",latency,ok,subMasterKey.size());
         if(!ok){ TEEC_CloseSession(&sess); TEEC_FinalizeContext(&ctx); _reply(false,{},{ }); return; }
 
         // [G] ENCRYPT_SUB_MASTER_KEY (AES-GCM, key=sharedSecret, iv=12B)
@@ -399,7 +417,7 @@ void SecurityGatewayStubImpl::requestSessionKey(
             encryptedPayload.insert(encryptedPayload.end(), out.begin(), out.end());
             return true;
         }, ok);
-        csv.log(_nodeID,"EncryptSMK",latency,ok,encryptedPayload.size());
+        logAndPrint(csv, _nodeID,"EncryptSMK",latency,ok,encryptedPayload.size());
         if(!ok){ TEEC_CloseSession(&sess); TEEC_FinalizeContext(&ctx); _reply(false,{},{ }); return; }
 
         // Cleanup & reply
@@ -409,9 +427,10 @@ void SecurityGatewayStubImpl::requestSessionKey(
         _reply(true, gwPub, encryptedPayload);
 
         auto exec_end = Clock::now();
-        auto exec_latency_ms = std::chrono::duration_cast<micros>(exec_end - exec_start).count();
+        auto exec_latency_us = std::chrono::duration_cast<micros>(exec_end - exec_start).count();
 
-        csv.log(_nodeID, "Total", exec_latency_ms, true);
+        csv.log(_nodeID, "Total", exec_latency_us, true);
+        std::cout << "[SEC][" << _nodeID << "] Total: " << exec_latency_us << " us\n";
         csv.log(_nodeID,"-----",0,true);
         return;
     }
@@ -644,21 +663,27 @@ void SecurityGatewayStubImpl::requestSessionKey(
 
 
 //     }
-void set_cpu_affinity(int core_id) {
+void set_cpu_affinity(const std::vector<int>& cores) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    CPU_SET(core_id, &cpuset);
+
+    for (int core_id : cores) {
+        CPU_SET(core_id, &cpuset);  // 여러 코어 추가
+    }
 
     pid_t pid = getpid(); // 현재 프로세스
     if (sched_setaffinity(pid, sizeof(cpu_set_t), &cpuset) != 0) {
         perror("sched_setaffinity");
     } else {
-        std::cout << "[Info] Process pinned to CPU core " << core_id << "\n";
+        std::cout << "[Info] Process pinned to CPU cores: ";
+        for (int core_id : cores) std::cout << core_id << " ";
+        std::cout << "\n";
     }
 }
 
+
 int main() {
-//    set_cpu_affinity(11);  // 예: 코어 0에 고정
+//    set_cpu_affinity({1, 2, 3});  // 예: 코어 0에 고정
 
     std::cout << "[Server] Starting SecurityGateway with SOME/IP...\n";
     auto runtime = CommonAPI::Runtime::get();

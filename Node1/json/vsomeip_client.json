@@ -1,6 +1,6 @@
 { 
-   "unicast" : "192.168.24.180",
-   "network" : "node1",
+   "unicast" : "127.0.0.1",
+   "network" : "lo",
     "logging" :
     {
         "level" : "debug",
@@ -12,7 +12,7 @@
     [
         {
             "name" : "node1",
-            "id" : "0x1342"
+            "id" : "0x1341"
         }
     ],
     "services" :
@@ -20,7 +20,7 @@
         {
             "service" : "0x1234",
             "instance" : "0x5678",
-            "unicast" : "192.168.24.179",
+            "unicast" : "127.0.0.1",
             "unreliable" : "30509",
             "someip-tp": {
             	"client-to-service": [
@@ -29,7 +29,7 @@
             }
         }
     ],
-    "routing" : "node1",
+    "routing" : "service-sample",
     "service-discovery" :
     {
         "enable" : "true",

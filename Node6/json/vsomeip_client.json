@@ -1,6 +1,6 @@
 { 
    "unicast" : "127.0.0.1",
-   "network": "lo",
+   "network" : "lo",
     "logging" :
     {
         "level" : "debug",
@@ -11,8 +11,8 @@
     "applications" :
     [
         {
-            "name" : "service-sample",
-            "id" : "0x1277"
+            "name" : "node6",
+            "id" : "0x1346"
         }
     ],
     "services" :
@@ -20,21 +20,21 @@
         {
             "service" : "0x1234",
             "instance" : "0x5678",
+            "unicast" : "127.0.0.1",
             "unreliable" : "30509",
-            "someip-tp" : {
-            	"service-to-client": [
-            		"0x7C", "0x7D", "0x7E", "0x7F", "0x8001"
-            		]
-            	}
+            "someip-tp": {
+            	"client-to-service": [
+            	"0x7C", "0x7D", "0x7E", "0x7F"
+            	]
+            }
         }
     ],
-    "max-payload-size-unreliable" : "614400000",
     "routing" : "service-sample",
     "service-discovery" :
     {
-       "enable" : "true",
-       "multicast" : "224.244.224.241",
-       "port" : "30490",
-       "protocol" : "udp"
+        "enable" : "true",
+        "multicast" : "224.244.224.241",
+        "port" : "30490",
+        "protocol" : "udp"
     }
 }

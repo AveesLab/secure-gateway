@@ -277,14 +277,14 @@ void set_cpu_affinity(int core_id) {
 
 // main 함수
 int main() {
-    set_cpu_affinity(11);  // 예: 코어 0에 고정
+    set_cpu_affinity(8);  // 예: 코어 0에 고정
 
     using Clock = std::chrono::high_resolution_clock;
     using micros = std::chrono::microseconds;
 
     // 1) CSV 파일 준비
     std::string csv_filename = ENABLE_ECU_DERIVATION && !SINGLE_KEY_DERIVATION_MODE
-        ? "latency_results_all_operations.csv"
+        ? "latency_results_all_operations4.csv"
         : "latency_results_single_key_" + TARGET_KEY_NAME_FOR_CSV + ".csv";
     std::ofstream csv_file(csv_filename);
     if (!csv_file.is_open()) {
@@ -346,7 +346,7 @@ int main() {
             // 4.3 서명
             uint64_t nonce = generateNonce();
             uint64_t ts    = getTimestamp();
-            auto msg       = serializeMessage(12, nonce, ts);
+            auto msg       = serializeMessage(53, nonce, ts);
             std::vector<uint8_t> signature;
             lat = measureLatency([&]{ ok = signDataECDSA(teec_sess, msg, signature); });
             csv_file << iter << ",SMK_signDataECDSA,-,-," << signature.size() << "," << lat << "," << (ok ? "success" : "fail") << "\n";
@@ -363,7 +363,7 @@ int main() {
             bool gwLogicOk = false;
             lat = measureLatency([&]{
                 ok = gwClient.requestSessionKey(
-                    12, nonce, ts,
+                    53, nonce, ts,
                     pubKey, signature, myEcdhPub,
                     gwLogicOk, gwEcdhPub, encSmkPayload
                 ) && gwLogicOk;
