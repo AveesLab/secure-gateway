@@ -11,10 +11,14 @@
 #include <random>
 #include <iomanip>
 #include <fstream>
+#include <string>
+#include <algorithm>   // std::min
+
 #include <CommonAPI/CommonAPI.hpp>
 #include <v1/automotive/SecurityGatewayStubDefault.hpp>
 
-#define IV_LEN                12
+//#define IV_LEN                12
+
 
 using namespace v1_0::automotive;
 

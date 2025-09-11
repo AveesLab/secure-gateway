@@ -30,8 +30,8 @@ win32:CONFIG(release, debug|release): LIBS += -L/usr/local/lib/release/ -lvsomei
 else:win32:CONFIG(debug, debug|release): LIBS += -L/usr/local/lib/debug/ -lvsomeip3
 else:unix: LIBS += -L/usr/local/lib/ -lvsomeip3
 
-INCLUDEPATH += /usr/local/include
-DEPENDPATH += /usr/local/include
+unix: LIBS += -lcryptopp           
+
 
 LIBS += -lteec
 
